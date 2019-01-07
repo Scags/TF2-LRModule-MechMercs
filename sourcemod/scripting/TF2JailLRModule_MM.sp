@@ -605,7 +605,7 @@ public Action fwdOnPlayMusic(char song[PLATFORM_MAX_PATH], float &time)
 	if (IsSoundPrecached(MechMercsTheme))
 	{
 		strcopy(song, sizeof(song), MechMercsTheme);
-		time = 250.0;
+		time = 130.0;
 		return Plugin_Continue;
 	}
 
