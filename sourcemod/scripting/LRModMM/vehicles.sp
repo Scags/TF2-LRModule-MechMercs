@@ -1,0 +1,6 @@
+#include "LRModMM/tank.sp"
+#include "LRModMM/armoredcar.sp"
+#include "LRModMM/ambulance.sp"
+#include "LRModMM/kingpanzer.sp"
+#include "LRModMM/panzer3.sp"
+#include "LRModMM/marder3.sp"
