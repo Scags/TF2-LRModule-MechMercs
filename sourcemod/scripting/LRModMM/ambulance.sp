@@ -91,7 +91,7 @@ methodmap CAmbulance < CTank	/*you MUST inherit from CTank if u want roadkilling
 			if( !IsClientInGame(i) )
 				continue;
 			
-			if( !IsInRange(client, i, 250.0) )
+			if( !IsInRange(client, i, 250.0, false) )
 				continue;
 			
 			if( GetClientTeam(i) != this.iTeam or i == client )
