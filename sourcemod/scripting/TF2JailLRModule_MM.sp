@@ -9,7 +9,7 @@
 #pragma newdecls required
 #include "TF2JailRedux/stocks.inc"
 
-#define PLUGIN_VERSION		"1.0.0"
+#define PLUGIN_VERSION		"1.0.1"
 
 #define RED 				2
 #define BLU 				3
@@ -18,7 +18,7 @@
 
 public Plugin myinfo =
 {
-	name = "TF2Jail PH MM Module",
+	name = "TF2Jail MM LR Module",
 	author = "Scag/Ragenewb, all props to nergal",
 	description = "Mechanized Mercenaries embedded as an LR for TF2Jail Redux",
 	version = PLUGIN_VERSION,
@@ -264,6 +264,7 @@ public void OnAllPluginsLoaded()
 	JB_Hook(OnTimeEnd, 					fwdOnTimeEnd);
 	JB_Hook(OnPlayMusic, 				fwdOnPlayMusic);
 	JB_Hook(OnShouldAutobalance, 		fwdOnShouldAutobalance);
+	JB_Hook(OnSetWardenLock, 			fwdOnSetWardenLock);
 }
 
 public void OnPluginEnd()
@@ -413,7 +414,6 @@ public int HintPanel(Menu menu, MenuAction action, int client, int select)
 	return;
 }
 
-
 public void fwdOnDownloads()
 {
 	ManageDownloads();
@@ -425,6 +425,7 @@ public void fwdOnHudShow(char strHud[128])
 
 	strcopy(strHud, 128, "Mechanized Mercenaries");
 }
+
 public Action fwdOnLRPicked(const JBPlayer Player, const int selection, ArrayList arrLRS)
 {
 	if (selection == TF2JailRedux_LRIndex())
@@ -438,7 +439,7 @@ public void fwdOnPanelAdd(const int index, char name[64])
 		strcopy(name, sizeof(name), "Mechanized Mercenaries - War Thunder who?");
 }
 
-public void fwdOnMenuAdd(const int index, int &max, char strName[32])
+public void fwdOnMenuAdd(const int index, int &max, char strName[64])
 {
 	if (index != TF2JailRedux_LRIndex())
 		return;
@@ -469,26 +470,7 @@ public void fwdOnRoundStart(Event event)
 	gamemode.bDisableMuting = hDisableMuting.BoolValue;
 	gamemode.bIsWarday = true;
 	gamemode.bIsWardenLocked = true;
-
-	int countred = GetLivingPlayers(RED), countblu = GetLivingPlayers(BLU);
-	int step = RoundFloat(FloatAbs(float(countred) - float(countblu))) / 2;	// Rounds down with odds
-	int team = countred > countblu ? RED : BLU;
-	int client, flamemanager;
-
-	for (int i = 0; i < step; ++i)
-	{
-		client = GetRandomPlayer(team, true);
-		if (client == -1)
-			break;
-
-		if (HasEntProp(client, Prop_Send, "m_hFlameManager"))
-		{
-			flamemanager = GetEntPropEnt(client, Prop_Send, "m_hFlameManager");	// Avoid teamkilling
-			if (flamemanager != -1)
-				AcceptEntityInput(flamemanager, "Kill");
-		}
-		JBPlayer(client).ForceTeamChange(team == RED ? BLU : RED);
-	}
+	gamemode.EvenTeams();
 
 	EmitSoundToAll(VehicleHorns[GetRandomInt(0, sizeof(VehicleHorns)-1)]);
 }
@@ -514,10 +496,7 @@ public void fwdOnRoundEnd(Event event)
 public void fwdOnRoundEndPlayer(const JBPlayer player, Event event)
 {
 	CHECK();
-
-	SetClientOverlay(player.index, "0");
-	SetVariantString("");
-	AcceptEntityInput(player.index, "SetCustomModel");
+	JailTank.Of(player).Reset();
 }
 
 public Action fwdOnTimeEnd()
@@ -658,4 +637,11 @@ public Action ForcePlayerVehicle(int client, int args)
 		CPrintToChat(client, "%t You've forced %N onto a Vehicle", "Admin Tag", target_list[i]);
 	}
 	return Plugin_Handled;
+}
+
+public Action fwdOnSetWardenLock(const bool status)
+{
+	CHECK() Plugin_Continue;
+
+	return !status ? Plugin_Handled : Plugin_Continue;
 }
