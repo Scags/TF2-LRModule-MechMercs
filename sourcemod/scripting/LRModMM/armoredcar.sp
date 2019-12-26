@@ -16,8 +16,8 @@ methodmap CArmCar < CTank
 	
 	property int iCannonClipsize
 	{
-		public get() { return this.GetValue("iCannonClipsize"); }
-		public set( const int i ) { this.SetValue("iCannonClipsize", i); }
+		public get() { return this.GetProp("iCannonClipsize"); }
+		public set( const int i ) { this.SetProp("iCannonClipsize", i); }
 	}
 
 	public void PlaySpawnSound (const int number)

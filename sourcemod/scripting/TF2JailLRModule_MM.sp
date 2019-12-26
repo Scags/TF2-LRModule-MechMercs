@@ -9,7 +9,7 @@
 #pragma newdecls required
 #include "TF2JailRedux/stocks.inc"
 
-#define PLUGIN_VERSION		"1.0.1"
+#define PLUGIN_VERSION		"1.0.2"
 
 #define RED 				2
 #define BLU 				3
@@ -53,40 +53,40 @@ methodmap JailTank < JBPlayer
 	}
 	property int iMaxHealth
 	{
-		public get()					{ return this.GetValue("iMaxHealth"); }
-		public set( const int i )		{ this.SetValue("iMaxHealth", i); }
+		public get()					{ return this.GetProp("iMaxHealth"); }
+		public set( const int i )		{ this.SetProp("iMaxHealth", i); }
 	}
 	property int iType
 	{
-		public get()					{ return this.GetValue("iType"); }
-		public set( const int i )		{ this.SetValue("iType", i); }
+		public get()					{ return this.GetProp("iType"); }
+		public set( const int i )		{ this.SetProp("iType", i); }
 	}
 
 	property bool bIsVehicle
 	{
-		public get()					{ return this.GetValue("bIsVehicle"); }
-		public set( const bool i )		{ this.SetValue("bIsVehicle", i); }
+		public get()					{ return this.GetProp("bIsVehicle"); }
+		public set( const bool i )		{ this.SetProp("bIsVehicle", i); }
 	}
 	property bool bHonkedHorn
 	{
-		public get()					{ return this.GetValue("bHonkedHorn"); }
-		public set( const bool i )		{ this.SetValue("bHonkedHorn", i); }
+		public get()					{ return this.GetProp("bHonkedHorn"); }
+		public set( const bool i )		{ this.SetProp("bHonkedHorn", i); }
 	}
 
 	property float flGas
 	{
-		public get()					{ return this.GetValue("flGas"); }
-		public set( const float i )		{ this.SetValue("flGas", i); }
+		public get()					{ return this.GetPropFloat("flGas"); }
+		public set( const float i )		{ this.SetPropFloat("flGas", i); }
 	}
 	property float flSoundDelay
 	{
-		public get()					{ return this.GetValue("flSoundDelay"); }
-		public set( const float i )		{ this.SetValue("flSoundDelay", i); }
+		public get()					{ return this.GetPropFloat("flSoundDelay"); }
+		public set( const float i )		{ this.SetPropFloat("flSoundDelay", i); }
 	}
 	property float flIdleSound
 	{
-		public get()					{ return this.GetValue("flIdleSound"); }
-		public set( const float i )		{ this.SetValue("flIdleSound", i); }
+		public get()					{ return this.GetPropFloat("flIdleSound"); }
+		public set( const float i )		{ this.SetPropFloat("flIdleSound", i); }
 	}
 
 	public void Reset()
@@ -246,8 +246,8 @@ public void OnAllPluginsLoaded()
 	JB_Hook(OnPanelAdd,					fwdOnPanelAdd);
 	JB_Hook(OnMenuAdd, 					fwdOnMenuAdd);
 	JB_Hook(OnDownloads, 				fwdOnDownloads);
-	JB_Hook(OnRoundStart, 				fwdOnRoundStart);
-	JB_Hook(OnRoundStartPlayer, 		fwdOnRoundStartPlayer);
+	JB_Hook(OnRoundStart2, 				fwdOnRoundStart);
+	JB_Hook(OnRoundStartPlayer2, 		fwdOnRoundStartPlayer);
 	JB_Hook(OnRoundEnd, 				fwdOnRoundEnd);
 	JB_Hook(OnRoundEndPlayer, 			fwdOnRoundEndPlayer);
 	JB_Hook(OnRedThink, 				fwdOnThink);

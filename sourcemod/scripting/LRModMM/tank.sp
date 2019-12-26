@@ -21,8 +21,8 @@ methodmap CTank < JailTank
 
 	property float flLastFire
 	{
-		public get() { return this.GetValue("flLastFire"); }
-		public set( const float i ) { this.SetValue("flLastFire", i); }
+		public get() { return this.GetPropFloat("flLastFire"); }
+		public set( const float i ) { this.SetPropFloat("flLastFire", i); }
 	}
 
 	public void PlaySpawnSound (const int number)
