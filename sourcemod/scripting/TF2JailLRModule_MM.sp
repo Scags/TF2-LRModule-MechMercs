@@ -126,6 +126,7 @@ methodmap JailTank < JBPlayer
 		this.iType = id;
 		this.bIsVehicle = true;
 		this.VehHelpPanel();
+		SetClientOverlay(this.index, "effects/combine_binocoverlay");
 		CreateTimer(0.1, Timer_MakePlayerVehicle, this.userid);
 	}
 };
@@ -147,12 +148,6 @@ ConVar
 	hKingTank[ROCKETDMG+1],
 	hLightTank[ROCKETDMG+1],
 	hTank[ROCKETDMG+1],
-	hRocketSpeed,
-	hConvertOnSpawn,
-	hCrushDmg,
-	hTimeLeft,
-	hPickCount,
-	hDisableMuting,
 	hTeamBansCVar
 ;
 
@@ -161,14 +156,19 @@ int
 ;
 
 bool
-	bDisabled
+	bDisabled = true
 ;
 
 JBGameMode
 	gamemode
 ;
 
-#define CHECK() 				if (gamemode.iLRType != TF2JailRedux_LRIndex()) return
+LastRequest
+	g_LR
+;
+
+#define CHECK() 				if (g_LR == null || g_LR != JBGameMode_GetCurrentLR()) return
+#define CHECK_ACT(%1) 			if (g_LR == null || g_LR != JBGameMode_GetCurrentLR()) return %1
 
 #include "LRModMM/handler.sp"
 
@@ -223,76 +223,98 @@ public void OnPluginStart()
 	hLightTank[ROCKETDMG] = CreateConVar("sm_jbmm_lighttank_rocketdmg", "80", "How much damage the Panzer 3's rocket deals.", FCVAR_NOTIFY, true, 1.0);
 	hTank[ROCKETDMG] = CreateConVar("sm_jbmm_tank_rocketdmg", "100", "How much damage the Panzer 4's rocket deals.", FCVAR_NOTIFY, true, 1.0);
 
-	hCrushDmg = CreateConVar("sm_jbmm_crushdmg", "5.0", "Crush Damage done by Vehicles while they're moving", FCVAR_NOTIFY, true, 0.0);
-	hRocketSpeed = CreateConVar("sm_jbmm_rocket_speed", "4000", "How fast tank rockets travel.", FCVAR_NOTIFY, true, 1.0);
-	hConvertOnSpawn = CreateConVar("sm_jbmm_spawn_convert", "0", "Convert players to vehicles when/if they spawn in midround?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	hTimeLeft = CreateConVar("sm_jbmm_round_time", "600", "Round time during a MM round IF a time limit is enabled in core plugin.", FCVAR_NOTIFY, true, 0.0);
-	hDisableMuting = CreateConVar("sm_jbmm_disable_muting", "0", "Disable plugin muting during this last request?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	hPickCount = CreateConVar("sm_jbmm_pickcount", "5", "Maximum number of times this LR can be picked in a single map. 0 for no limit", FCVAR_NOTIFY, true, 0.0);
-
 	AutoExecConfig(true, "LRModuleMM");
 
 	LoadTranslations("tf2jail_redux.phrases");
 }
 
-public void OnAllPluginsLoaded()
-{
-	TF2JailRedux_RegisterPlugin();
-	gamemode = new JBGameMode();
-	hTeamBansCVar = FindConVar("sm_jbans_ignore_midround");
-
-	JB_Hook(OnHudShow, 					fwdOnHudShow);
-	JB_Hook(OnLRPicked, 				fwdOnLRPicked);
-	JB_Hook(OnPanelAdd,					fwdOnPanelAdd);
-	JB_Hook(OnMenuAdd, 					fwdOnMenuAdd);
-	JB_Hook(OnDownloads, 				fwdOnDownloads);
-	JB_Hook(OnRoundStart2, 				fwdOnRoundStart);
-	JB_Hook(OnRoundStartPlayer2, 		fwdOnRoundStartPlayer);
-	JB_Hook(OnRoundEnd, 				fwdOnRoundEnd);
-	JB_Hook(OnRoundEndPlayer, 			fwdOnRoundEndPlayer);
-	JB_Hook(OnRedThink, 				fwdOnThink);
-	JB_Hook(OnBlueThink, 				fwdOnThink);
-	JB_Hook(OnClientTouch, 				fwdOnClientTouch);
-	JB_Hook(OnPlayerSpawned, 			fwdOnPlayerSpawned);
-	JB_Hook(OnPlayerDied, 				fwdOnPlayerDied);
-	JB_Hook(OnTimeLeft, 				fwdOnTimeLeft);
-	JB_Hook(OnPlayerPreppedPre, 		fwdOnPlayerPreppedPre);
-	JB_Hook(OnHurtPlayer, 				fwdOnHurtPlayer);
-	JB_Hook(OnTakeDamage, 				fwdOnTakeDamage);
-	JB_Hook(OnClientInduction, 			fwdOnClientInduction);
-	JB_Hook(OnVariableReset, 			fwdOnVariableReset);
-	JB_Hook(OnTimeEnd, 					fwdOnTimeEnd);
-	JB_Hook(OnPlayMusic, 				fwdOnPlayMusic);
-	JB_Hook(OnShouldAutobalance, 		fwdOnShouldAutobalance);
-	JB_Hook(OnSetWardenLock, 			fwdOnSetWardenLock);
-}
-
 public void OnPluginEnd()
 {
-	if (LibraryExists("TF2Jail_Redux"))
-		TF2JailRedux_UnRegisterPlugin();
-}
-
-public void OnLibraryRemoved(const char[] name)
-{
-	if (!strcmp(name, "TF2Jail_Redux", false))
-		bDisabled = true;
-	else if (!strcmp(name, "TF2JailRedux_TeamBans", false))
-		hTeamBansCVar = null;
+	if (LibraryExists("TF2Jail_Redux") && g_LR != null)
+	{
+		g_LR.Destroy();
+		g_LR = null;
+	}
 }
 
 public void OnLibraryAdded(const char[] name)
 {
 	if (!strcmp(name, "TF2Jail_Redux", false) && bDisabled)
 	{
-		OnAllPluginsLoaded();
+		InitSubPlugin();
 		bDisabled = false;
 	}
 	else if (!strcmp(name, "TF2JailRedux_TeamBans", false))
 		hTeamBansCVar = FindConVar("sm_jbans_ignore_midround");
 }
 
-public void fwdOnClientInduction(const JBPlayer player)
+public void InitSubPlugin()
+{
+	gamemode = new JBGameMode();
+#pragma unused gamemode
+
+	hTeamBansCVar = FindConVar("sm_jbans_ignore_midround");
+
+	g_LR = LastRequest.CreateFromConfig("Mechanized Mercenaries");
+
+	if (g_LR == null)		// If it's her first time, set the mood
+	{
+		g_LR = LastRequest.Create("Mechanized Mercenaries");
+
+		g_LR.SetDescription("Turn everyone into tanks!");
+		g_LR.SetAnnounceMessage("{default}{NAME}{burlywood} has selected {default}Mechanized Mercenaries{burlywood} as their last request.");
+
+		g_LR.SetParameterNum("Disabled", 0);
+		g_LR.SetParameterNum("OpenCells", 1);
+		g_LR.SetParameterNum("TimerStatus", 1);
+		g_LR.SetParameterNum("TimerTime", 300);
+		g_LR.SetParameterNum("LockWarden", 1);
+		g_LR.SetParameterNum("UsesPerMap", 3);
+		g_LR.SetParameterNum("IsWarday", 1);
+		g_LR.SetParameterNum("NoMuting", 1);
+		g_LR.SetParameterNum("DisableMedic", 1);
+		g_LR.SetParameterNum("EnableCriticals", 0);
+		g_LR.SetParameterNum("IgnoreRebels", 1);
+		g_LR.SetParameterNum("VoidFreekills", 1);
+		g_LR.SetParameterNum("AllowWeapons", 1);
+		g_LR.SetParameterNum("BalanceTeams", 1);
+
+		g_LR.SetParameterNum("CrushDamage", 5);
+		g_LR.SetParameterNum("RocketSpeed", 4000);
+		g_LR.SetParameterNum("ConvertOnSpawn", 0);
+
+		g_LR.SetMusicStatus(true);
+		g_LR.SetMusicFileName(MechMercsTheme);
+		g_LR.SetMusicTime(130.0);
+		// Keeping everything else as a cvar, yea fuck that lmao
+
+		g_LR.ExportToConfig(.create = true, .createonly = true);
+	}
+
+	JB_Hook(OnDownloads, 				fwdOnDownloads);
+	g_LR.AddHook(OnLRActivate, 			fwdOnRoundStart);
+	g_LR.AddHook(OnLRActivatePlayer, 	fwdOnRoundStartPlayer);
+	g_LR.AddHook(OnRoundEnd, 			fwdOnRoundEnd);
+	g_LR.AddHook(OnRoundEndPlayer, 		fwdOnRoundEndPlayer);
+	g_LR.AddHook(OnRedThink, 			fwdOnThink);
+	g_LR.AddHook(OnBlueThink, 			fwdOnThink);
+	g_LR.AddHook(OnPlayerTouch, 		fwdOnClientTouch);
+	g_LR.AddHook(OnPlayerSpawned, 		fwdOnPlayerSpawned);
+	g_LR.AddHook(OnPlayerDied, 			fwdOnPlayerDied);
+	g_LR.AddHook(OnPlayerPrepped, 		fwdOnPlayerPrepped);
+	g_LR.AddHook(OnPlayerHurt, 			fwdOnHurtPlayer);
+	g_LR.AddHook(OnTakeDamage, 			fwdOnTakeDamage);
+	g_LR.AddHook(OnClientInduction, 	fwdOnClientInduction);
+	g_LR.AddHook(OnVariableReset, 		fwdOnVariableReset);
+	g_LR.AddHook(OnTimeEnd, 			fwdOnTimeEnd);
+//	g_LR.AddHook(OnPlayMusic, 			fwdOnPlayMusic);
+//	g_LR.AddHook(OnShouldAutobalance, 	fwdOnShouldAutobalance);
+//	g_LR.AddHook(OnSetWardenLock, 		fwdOnSetWardenLock);
+
+	bDisabled = false;
+}
+
+public void fwdOnClientInduction(LastRequest lr, const JBPlayer player)
 {
 	JailTank base = JailTank.Of(player);
 	base.iType = -1;
@@ -305,10 +327,8 @@ public void fwdOnClientInduction(const JBPlayer player)
 	ToCTank(base).flLastFire = 0.0;
 }
 
-public void fwdOnClientTouch(const JBPlayer player, const JBPlayer touched)
+public void fwdOnClientTouch(LastRequest lr, const JBPlayer player, const JBPlayer touched)
 {
-	CHECK();
-
 	JailTank base = JailTank.Of(player), victim = JailTank.Of(touched);
 
 	// make sure noot to damage players just because enemies stand on them.
@@ -316,10 +336,8 @@ public void fwdOnClientTouch(const JBPlayer player, const JBPlayer touched)
 		ManageOnTouchPlayer(base, victim); // in handler.sp
 }
 
-public void fwdOnThink(const JBPlayer player)
+public void fwdOnThink(LastRequest lr, const JBPlayer player)
 {
-	CHECK();
-
 	JailTank base = JailTank.Of(player);
 	if (base.bIsVehicle)
 	{
@@ -330,7 +348,6 @@ public void fwdOnThink(const JBPlayer player)
 
 public Action Timer_MakePlayerVehicle(Handle timer, any userid)
 {
-
 	int client = GetClientOfUserId(userid);
 	if( client and IsClientInGame(client) ) {
 		JailTank player = JailTank(client);
@@ -380,10 +397,8 @@ public bool TraceFilterIgnorePlayers(int entity, int contentsMask, any client)
 	return( !(entity and entity <= MaxClients) );
 }
 
-public Action fwdOnTakeDamage(const JBPlayer victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
+public Action fwdOnTakeDamage(LastRequest lr, const JBPlayer victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)
 {
-	CHECK() Plugin_Continue;
-
 	JailTank vehAttacker = JailTank(attacker);
 	JailTank vehVictim = JailTank.Of(victim);
 
@@ -419,73 +434,24 @@ public void fwdOnDownloads()
 	ManageDownloads();
 }
 
-public void fwdOnHudShow(char strHud[128])
+public void fwdOnRoundStart(LastRequest lr)
 {
-	CHECK();
-
-	strcopy(strHud, 128, "Mechanized Mercenaries");
-}
-
-public Action fwdOnLRPicked(const JBPlayer Player, const int selection, ArrayList arrLRS)
-{
-	if (selection == TF2JailRedux_LRIndex())
-		CPrintToChatAll("%t %N has chosen {default}Mechanized Mercenaries{burlywood} as their last request.", "Plugin Tag", Player.index);
-	return Plugin_Continue;
-}
-
-public void fwdOnPanelAdd(const int index, char name[64])
-{
-	if (index == TF2JailRedux_LRIndex())
-		strcopy(name, sizeof(name), "Mechanized Mercenaries - War Thunder who?");
-}
-
-public void fwdOnMenuAdd(const int index, int &max, char strName[64])
-{
-	if (index != TF2JailRedux_LRIndex())
-		return;
-
-	max = hPickCount.IntValue;
-	strcopy(strName, sizeof(strName), "Mechanized Mercenaries");
-}
-
-public void fwdOnTimeLeft(int &time)
-{
-	CHECK();
-
-	time = hTimeLeft.IntValue;
-}
-
-public void fwdOnRoundStart(Event event)
-{
-	CHECK();
-
 	if (hTeamBansCVar && !hTeamBansCVar.BoolValue)
 	{
 		hTeamBansCVar.SetBool(true);
 		iTeamBansCVar = 1;
 	}
 
-	gamemode.bDisableCriticals = true;
-	gamemode.bIgnoreRebels = true;
-	gamemode.bDisableMuting = hDisableMuting.BoolValue;
-	gamemode.bIsWarday = true;
-	gamemode.bIsWardenLocked = true;
-	gamemode.EvenTeams();
-
 	EmitSoundToAll(VehicleHorns[GetRandomInt(0, sizeof(VehicleHorns)-1)]);
 }
 
-public void fwdOnRoundStartPlayer(const JBPlayer player)
+public void fwdOnRoundStartPlayer(LastRequest lr, const JBPlayer player)
 {
-	CHECK();
-
 	JailTank.Of(player).ConvertToVehicle(GetRandomInt(0, Destroyer));
 }
 
-public void fwdOnRoundEnd(Event event)
+public void fwdOnRoundEnd(LastRequest lr, Event event)
 {
-	CHECK();
-
 	if (hTeamBansCVar && iTeamBansCVar)
 	{
 		hTeamBansCVar.SetBool(false);
@@ -493,16 +459,13 @@ public void fwdOnRoundEnd(Event event)
 	}
 }
 
-public void fwdOnRoundEndPlayer(const JBPlayer player, Event event)
+public void fwdOnRoundEndPlayer(LastRequest lr, const JBPlayer player, Event event)
 {
-	CHECK();
 	JailTank.Of(player).Reset();
 }
 
-public Action fwdOnTimeEnd()
+public Action fwdOnTimeEnd(LastRequest lr)
 {
-	CHECK() Plugin_Continue;
-
 	int players[2];
 	int i;
 	for (i = MaxClients; i; --i)
@@ -527,26 +490,21 @@ public Action fwdOnTimeEnd()
 	return Plugin_Handled;
 }
 
-public void fwdOnPlayerSpawned(const JBPlayer player, Event event)
+public void fwdOnPlayerSpawned(LastRequest lr, const JBPlayer player, Event event)
 {
-	CHECK();
-	if (hConvertOnSpawn.BoolValue)
+	if (lr.GetParameterNum("ConvertOnSpawn", 0))
 		JailTank.Of(player).ConvertToVehicle(GetRandomInt(0, Destroyer));
 }
 
-public Action fwdOnPlayerPreppedPre(const JBPlayer player)
+public Action fwdOnPlayerPrepped(LastRequest lr, const JBPlayer player)
 {
-	CHECK() Plugin_Continue;
-
 	if (JailTank.Of(player).bIsVehicle)
 		return Plugin_Handled;
 	return Plugin_Continue;
 }
 
-public void fwdOnPlayerDied(const JBPlayer player, Event event)
+public void fwdOnPlayerDied(LastRequest lr, const JBPlayer player, Event event)
 {
-	CHECK();
-
 	JailTank base = JailTank.Of(player);
 	if (base.bIsVehicle)
 	{
@@ -555,16 +513,15 @@ public void fwdOnPlayerDied(const JBPlayer player, Event event)
 	}
 }
 
-public void fwdOnHurtPlayer(const JBPlayer victim, const JBPlayer attacker, Event event)
+// TODO; use SDKHook_GetMaxHealth for this instead!
+public void fwdOnHurtPlayer(LastRequest lr, const JBPlayer victim, const JBPlayer attacker, Event event)
 {
-	CHECK();
-
 	JailTank base = JailTank.Of(victim);
 	if (base.bIsVehicle)
 		base.iHealth -= event.GetInt("damageamount");
 }
 
-public void fwdOnVariableReset(const JBPlayer player)
+public void fwdOnVariableReset(LastRequest lr, const JBPlayer player)
 {
 	JailTank base = JailTank.Of(player);
 	base.iType = -1;
@@ -577,30 +534,9 @@ public void fwdOnVariableReset(const JBPlayer player)
 	ToCTank(base).flLastFire = 0.0;
 }
 
-public Action fwdOnPlayMusic(char song[PLATFORM_MAX_PATH], float &time)
-{
-	CHECK() Plugin_Continue;
-
-	if (IsSoundPrecached(MechMercsTheme))
-	{
-		strcopy(song, sizeof(song), MechMercsTheme);
-		time = 130.0;
-		return Plugin_Continue;
-	}
-
-	return Plugin_Handled;
-}
-
-public Action fwdOnShouldAutobalance()
-{
-	if (gamemode.iLRPresetType == TF2JailRedux_LRIndex())
-		return Plugin_Handled;
-	return Plugin_Continue;
-}
-
 public Action ForcePlayerVehicle(int client, int args)
 {
-	CHECK() Plugin_Handled;
+	CHECK_ACT(Plugin_Handled);
 
 	if( args < 2 ) {
 		ReplyToCommand(client, "%t Usage: sm_forcevehicle <player/target> <vehicle id>", "Plugin Tag");
@@ -639,9 +575,12 @@ public Action ForcePlayerVehicle(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action fwdOnSetWardenLock(const bool status)
+public Action fwdOnSetWardenLock(LastRequest lr, const bool status)
 {
-	CHECK() Plugin_Continue;
-
 	return !status ? Plugin_Handled : Plugin_Continue;
+}
+
+public bool TraceRayDontHitSelf(int ent, int mask, any data)
+{
+	return ent != data;
 }

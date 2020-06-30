@@ -91,7 +91,7 @@ methodmap CLightTank < CTank
 				bool crit = ( TF2_IsPlayerInCondition(this.index, TFCond_Kritzkrieged) or TF2_IsPlayerInCondition(this.index, TFCond_CritOnWin) );
 				TE_SetupMuzzleFlash(vPosition, vAngles, 9.0, 1);
 				TE_SendToAll();
-				int rocket = ShootRocket(this.index, crit, vPosition, vAngles, hRocketSpeed.FloatValue*0.3333, hLightTank[ROCKETDMG].FloatValue, "", true);
+				int rocket = ShootRocket(this.index, crit, vPosition, vAngles, g_LR.GetParameterFloat("RocketSpeed", 4000.0)*0.3333, hLightTank[ROCKETDMG].FloatValue, "", true);
 				if (rocket>MaxClients)
 					SetEntPropEnt(rocket, Prop_Send, "m_hLauncher", GetEntPropEnt(this.index, Prop_Send, "m_hActiveWeapon"));
 				char s[PLATFORM_MAX_PATH];

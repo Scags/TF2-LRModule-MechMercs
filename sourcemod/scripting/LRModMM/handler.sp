@@ -45,11 +45,12 @@ public void ManageDownloads()
 		Format(s, PLATFORM_MAX_PATH, "sound/%s", VehicleHorns[i]);
 		CheckDownload(s);
 	}
-	if (FileExists("sound/" ... MechMercsTheme))
-	{
-		PrecacheSound(MechMercsTheme);
-		AddFileToDownloadsTable("sound/" ... MechMercsTheme);
-	}
+
+//	if (FileExists("sound/" ... MechMercsTheme))
+//	{
+//		PrecacheSound(MechMercsTheme);
+//		AddFileToDownloadsTable("sound/" ... MechMercsTheme);
+//	}
 }
 public void ManageHealth(const JailTank base)
 {
@@ -101,7 +102,7 @@ public void ManageOnTouchPlayer(const JailTank base, const JailTank victim)
 				return;
 
 			if( GetEntPropEnt(base.index, Prop_Send, "m_hGroundEntity") == victim.index ) // Vehicle is standing on player, kill them!
-				SDKHooks_TakeDamage(victim.index, base.index, base.index, hCrushDmg.FloatValue*5.0, DMG_VEHICLE);
+				SDKHooks_TakeDamage(victim.index, base.index, base.index, g_LR.GetParameterFloat("CrushDamage", 5.0)*5.0, DMG_VEHICLE);
 
 			//int buttons = GetClientButtons(base.index);
 
@@ -115,7 +116,7 @@ public void ManageOnTouchPlayer(const JailTank base, const JailTank victim)
 				NormalizeVector(vecTargetDir, vecTargetDir);
 				
 				if( GetVectorDotProduct(vecShoveDir, vecTargetDir) <= 0 )
-					SDKHooks_TakeDamage(victim.index, base.index, base.index, hCrushDmg.FloatValue, DMG_VEHICLE);
+					SDKHooks_TakeDamage(victim.index, base.index, base.index, g_LR.GetParameterFloat("CrushDamage", 5.0), DMG_VEHICLE);
 			}
 		}
 	}
@@ -132,7 +133,7 @@ public void ManageOnTouchBuilding(const JailTank base, const int building)
 	switch( base.iType ) {
 		case -1: {}
 		case Tank, ArmoredCar, Ambulance, KingPanzer, PanzerIII, Destroyer: {
-			SDKHooks_TakeDamage( building, base.index, base.index, hCrushDmg.FloatValue/2.0, DMG_VEHICLE);
+			SDKHooks_TakeDamage( building, base.index, base.index, g_LR.GetParameterFloat("CrushDamage", 5.0)/2.0, DMG_VEHICLE);
 			//SetVariantInt( RoundToCeil(CrushDmg.FloatValue)/2 );
 			//AcceptEntityInput(building, "RemoveHealth");
 		}
@@ -224,7 +225,7 @@ public void ManageVehicleTransition(const JailTank base) /* whatever stuff needs
 				AcceptEntityInput(ent, "kill");
 		}
 	}
-	SetClientOverlay(base.index, "effects/combine_binocoverlay");
+//	SetClientOverlay(base.index, "effects/combine_binocoverlay");
 }
 
 public Action ManageOnVehicleTakeDamage(const JailTank victim, int &attacker, int &inflictor, float &damage, int &damagetype, int &weapon, float damageForce[3], float damagePosition[3], int damagecustom)

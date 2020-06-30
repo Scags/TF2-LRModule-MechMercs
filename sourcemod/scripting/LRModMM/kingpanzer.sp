@@ -85,7 +85,7 @@ methodmap CKingTank < CTank
 				bool crit = ( TF2_IsPlayerInCondition(client, TFCond_Kritzkrieged) or TF2_IsPlayerInCondition(client, TFCond_CritOnWin) );
 				TE_SetupMuzzleFlash(vPosition, vAngles, 9.0, 1);
 				TE_SendToAll();
-				ShootRocket(client, crit, vPosition, vAngles, hRocketSpeed.FloatValue, hKingTank[ROCKETDMG].FloatValue, "");
+				ShootRocket(client, crit, vPosition, vAngles, g_LR.GetParameterFloat("RocketSpeed", 4000.0), hKingTank[ROCKETDMG].FloatValue, "");
 				char s[PLATFORM_MAX_PATH];
 				Format(s, PLATFORM_MAX_PATH, "%s%i.mp3", TankShoot, GetRandomInt(1, 3)); //sounds from Call of duty 1
 				EmitSoundToAll(s, client, SNDCHAN_AUTO, _, _, _, 80);
